@@ -1,0 +1,1168 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MTIEE TV Player – Actualizado (2025‑06‑25 v3)</title>
+
+  <!-- Librerías -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dashjs@latest/dist/dash.all.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
+  <style>
+    /* Paleta */
+    :root {
+      --bg-dark: #000;
+      --card-bg: #1f2937;
+      --card-hover: #374151;
+      --btn-blue: #2563eb;
+      --btn-blue-hov: #1d4ed8;
+      --btn-green: #16a34a;
+      --btn-green-hov: #15803d;
+      --text-light: #fff;
+      --accent: #4f46e5;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-dark); color: var(--text-light);
+      font-family: system-ui, sans-serif; display: flex; flex-direction: column; align-items: center;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      width: 100%; padding: 1rem; display: flex; justify-content: space-between; align-items: center;
+    }
+    .logo { height: 140px; max-width: 160px; }
+
+    /* Menú principal */
+    #menu { width: 90%; max-width: 520px; text-align: center; }
+    .grid-menu { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin: 2rem 0; }
+    .card {
+      background: var(--card-bg); padding: 1rem; border-radius: 0.5rem; font-weight: 700; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .card:hover { background: var(--card-hover); }
+
+    /* Entradas */
+    .input-principal {
+      width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid #4a5568;
+      background: #2d3748; color: #fff; margin-bottom: 0.5rem;
+    }
+    .btn { width: 100%; padding: 0.5rem; font-weight: 700; border: none; border-radius: 0.375rem; cursor: pointer; margin-bottom: 1rem; }
+    .btn-blue { background: var(--btn-blue); }
+    .btn-blue:hover { background: var(--btn-blue-hov); }
+    .btn-green { background: var(--btn-green); }
+    .btn-green:hover { background: var(--btn-green-hov); }
+
+    /* Secciones */
+    .seccion {
+      display: none; width: 100%;
+      position: relative;
+      padding-top: 4rem; /* espacio para botones absolutos */
+    }
+
+    /* Botón volver (estética mejorada) */
+    .btn-volver {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #3b82f6 100%);
+      color: #fff;
+      padding: 0.55rem 1.5rem;
+      border-radius: 1.25rem;
+      font-weight: 800;
+      border: 2px solid #60a5fa;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 0 6px rgba(96,165,250,0.6);
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: absolute; top: 1rem; left: 1rem;
+    }
+    .btn-volver:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.7), 0 0 10px rgba(96,165,250,0.8);
+    }
+
+    /* Botón panel lateral */
+    #btn-open-groups {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--card-bg);
+      color: var(--text-light);
+      border: 1px solid #4a5568;
+      border-radius: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+#btn-open-groups-onscreen {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--card-bg);
+      color: var(--text-light);
+      border: 1px solid #4a5568;
+      border-radius: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #btn-open-groups:hover { background: var(--card-hover); }
+    #btn-open-groups-series {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--card-bg);
+      color: var(--text-light);
+      border: 1px solid #4a5568;
+      border-radius: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #btn-open-groups-cine {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--card-bg);
+      color: var(--text-light);
+      border: 1px solid #4a5568;
+      border-radius: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #btn-open-groups-series:hover { background: var(--card-hover); }
+    #btn-open-groups-cine:hover { background: var(--card-hover); }
+
+    /* Panel lateral */
+    .side-panel {
+      height: 100%; width: 0; /* inicia cerrado */
+      position: fixed; z-index: 100; top: 0; left: 0;
+      background-color: #111;
+      overflow-x: hidden;
+      transition: 0.3s;
+      padding-top: 60px;
+      box-shadow: 3px 0 15px rgba(0,0,0,0.5);
+    }
+    .side-panel .close-btn {
+      position: absolute; top: 0; right: 15px; font-size: 36px; color: #818181; text-decoration: none;
+    }
+    .side-panel .close-btn:hover { color: var(--text-light); }
+    #side-panel-groups .group-btn {
+      padding: 8px 8px 8px 32px;
+      font-size: 1rem; font-weight: 700; color: #ccc;
+      background: transparent; border: none;
+      width: 100%; text-align: left; cursor: pointer;
+      transition: background 0.2s;
+    }
+    #side-panel-groups .group-btn:hover { background-color: var(--accent); color: var(--text-light); }
+
+    /* Player */
+    .player-wrapper { width: 90%; height: 50vh; margin: 0 auto 1rem; position: relative; }
+    video { width: 100%; height: 100%; border-radius: 0.5rem; background: #111; }
+    .loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; font-weight: 700; display: none; animation: colorChange 3s linear infinite; }
+    @keyframes colorChange { 0%{color:#ff0000;}33%{color:#ffd700;}66%{color:#c0c0c0;}100%{color:#ff0000;} }
+    .error-message { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 1rem; background: rgba(0,0,0,0.7); border-radius: 0.5rem; display: none; color:#f97316; }
+    .quality-selector { position: absolute; bottom: 1rem; right: 1rem; background: rgba(0,0,0,0.6); border-radius: 0.5rem; padding: 0.4rem; color:#fff; display:none; }
+
+    /* Ítems lista */
+    .channel-item { background: var(--card-bg); padding: 0.5rem 1rem; border-radius: 0.375rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; cursor:pointer; transition: background 0.2s; }
+    .channel-item:hover { background: var(--card-hover); }
+    .state-dot { width: 0.6rem; height: 0.6rem; border-radius: 9999px; margin-right: 0.5rem; display: inline-block; }
+  
+    /* Etiquetas y grupos para las nuevas barras */
+    .input-group { width: 100%; margin-bottom: 1rem; }
+    .text-label { color: var(--text-light); font-size: 0.9rem; font-weight: 600; }
+
+/* Banner info OnScreen */
+.onscreen-info{
+  position:absolute;
+  top:.5rem;
+  left:.5rem;
+  display:flex;
+  align-items:center;
+  gap:.4rem;
+  background:rgba(0,0,0,.75);
+  padding:.3rem .7rem;
+  border-radius:.4rem;
+  font-weight:700;
+  transform:translateX(-120%);
+  opacity:0;
+  transition:transform .4s ease-out, opacity .4s ease-out;
+}
+</style>
+
+<style>
+body {
+    background-color: #000 !important;
+    color: #fff;
+    font-family: system-ui, sans-serif;
+}
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2rem;
+    gap: 1rem;
+}
+
+/* Fondo para mapa y relojes según color indicado por el usuario (x,1) */
+.clock, .map {
+    background-color: #000; /* Color indicado por usuario (X,1) */
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: background 0.2s;
+}
+
+.clock {
+    flex: 1 1 calc(20% - 2rem);
+    max-width: 200px;
+    position: relative;
+}
+
+.clock h4 a {
+    color: #00ffcc;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.clock img {
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+}
+
+.map {
+    flex: 1 1 100%;
+    text-align: center;
+}
+
+.map img {
+    max-width: 90%;
+    height: auto;
+}
+
+@media (max-width: 768px) {
+    .clock {
+        flex: 1 1 calc(50% - 2rem);
+    }
+}
+</style>
+
+</head>
+<body>
+  <header>
+    <img src="https://i.postimg.cc/s2z44wkc/file-00000000cabc61fa8b50c20eec25f99e.png" alt="MTIEE" class="logo" />
+    <div id="clock"></div>
+    <button id="btn-settings" onclick="toggleSettings()" style="background:transparent;border:none;font-size:1.8rem;color:#fff;cursor:pointer;position:absolute;right:1rem;top:1rem;"><i class="fa fa-gear"></i></button>
+  </header>
+
+  <!-- Panel ajustes (vacío por ahora) -->
+  <div id="settings-panel" class="side-panel" style="right:0;left:auto;">
+    <a href="javascript:void(0)" class="close-btn" onclick="toggleSettings()">&times;</a>
+    <div style="padding:2rem;text-align:center;">Ajustes (próximamente)</div>
+  </div>
+
+  <!-- Panel lateral -->
+  <div id="side-panel" class="side-panel">
+    <a href="javascript:void(0)" class="close-btn" onclick="toggleNav()">&times;</a>
+    <div id="side-panel-groups"></div>
+  <!-- Panel lateral SERIES -->
+  <div id="side-panel-series" class="side-panel">
+    <a href="javascript:void(0)" class="close-btn" onclick="toggleNavSeries()">&times;</a>
+    <div id="side-panel-series-groups"></div>
+  </div>
+
+  <!-- Panel lateral CINE -->
+  <div id="side-panel-cine" class="side-panel">
+    <a href="javascript:void(0)" class="close-btn" onclick="toggleNavCine()">&times;</a>
+    <div id="side-panel-cine-groups"></div>
+  </div>
+
+  </div>
+
+  <div id="menu">
+    <div class="grid-menu">
+      <div class="card" onclick="mostrarSeccion('tv')">TV EN VIVO
+    <div id="status-message" style="margin-top:1.5rem;font-weight:700;"></div></div>
+      <div class="card" onclick="mostrarSeccion('series')">SERIES</div>
+      <div class="card" onclick="mostrarSeccion('onscreen')">ON SCREEN</div>
+      <div class="card" onclick="mostrarSeccion('cine')">CINE</div>
+    </div>
+
+    
+    <!-- Barra Lista M3U -->
+    <div class="input-group">
+      <label for="m3u" class="text-label" style="display:block;margin-bottom:0.25rem;">Lista M3U</label>
+      <div style="display:flex; gap:0.5rem;">
+        <input id="m3u" type="url" class="input-principal" placeholder="https://...">
+        <button id="load-playlist-btn" class="btn btn-blue" onclick="loadPlaylist(m3u.value.trim())">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra URL directa -->
+
+    <div class="input-group">
+      <label for="stream" class="text-label" style="display:block;margin-bottom:0.25rem;">URL de Stream (Película o Canal)</label>
+      <div style="display:flex; gap:0.5rem;">
+        <input id="stream" type="url" class="input-principal" placeholder="Pega la URL del stream...">
+        <button id="load-stream-btn" class="btn btn-green" onclick="loadSingleStream()">
+          <i class="fas fa-play"></i>
+        </button>
+      </div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background-color: #1a1a1a;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .clock {
+            background-color: #2d2d2d;
+            flex: 1 1 20%;
+            text-align: center;
+            margin: 10px;
+            padding: 20px;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .clock h4 a {
+            color: #00ffcc; /* Color por defecto para los enlaces de los relojes */
+            text-decoration: none;
+        }
+
+        .clock img {
+            width: 20px;
+            height: 20px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        .clock:nth-child(2) h4 a {
+            color: #ff6600; /* Color para República Dominicana */
+        }
+
+        .clock:nth-child(3) h4 a {
+            color: #ffcc00; /* Color para New York */
+        }
+
+        .clock:nth-child(4) h4 a {
+            color: #66ff66; /* Color para Seattle */
+        }
+
+        .clock:nth-child(5) h4 a {
+            color: #ff66ff; /* Color para Cleveland */
+        }
+
+        /* Bandera para cada país */
+        .clock:nth-child(1) img {
+            content: url('https://flagcdn.com/w20/pr.png'); /* Bandera de Puerto Rico */
+        }
+
+        .clock:nth-child(2) img {
+            content: url('https://flagcdn.com/w20/do.png'); /* Bandera de República Dominicana */
+        }
+
+        .clock:nth-child(3) img {
+            content: url('https://flagcdn.com/w20/us.png'); /* Bandera de Estados Unidos */
+        }
+
+        .clock:nth-child(4) img {
+            content: url('https://flagcdn.com/w20/us.png'); /* Bandera de Estados Unidos */
+        }
+
+        .clock:nth-child(5) img {
+            content: url('https://flagcdn.com/w20/us.png'); /* Bandera de Estados Unidos */
+        }
+
+        .map {
+            background-color: #333333;
+            color: #FFFFFF;
+            flex: 1 1 100%;
+            text-align: center;
+        }
+
+        .map img {
+            width: 80%;
+            height: auto;
+        }
+    </style>
+
+<style>
+body {
+    background-color: #000 !important;
+    color: #fff;
+    font-family: system-ui, sans-serif;
+}
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2rem;
+    gap: 1rem;
+}
+
+/* Fondo para mapa y relojes según color indicado por el usuario (x,1) */
+.clock, .map {
+    background-color: #000; /* Color indicado por usuario (X,1) */
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: background 0.2s;
+}
+
+.clock {
+    flex: 1 1 calc(20% - 2rem);
+    max-width: 200px;
+    position: relative;
+}
+
+.clock h4 a {
+    color: #00ffcc;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.clock img {
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+}
+
+.map {
+    flex: 1 1 100%;
+    text-align: center;
+}
+
+.map img {
+    max-width: 90%;
+    height: auto;
+}
+
+@media (max-width: 768px) {
+    .clock {
+        flex: 1 1 calc(50% - 2rem);
+    }
+}
+</style>
+
+</head>
+<body>
+
+    <div class="container">
+        <div class="map">
+            <a href="https://info.flagcounter.com/mX5P"><img src="https://s01.flagcounter.com/map/mX5P/size_s/txt_000000/border_D6D6D6/pageviews_1/viewers_0/flags_0/" alt="Flag Counter" border="0"></a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="clock">
+            <h4><a href="https://www.zeitverschiebung.net/es/city/4568127"><span style="color:gray;">Hora actual en</span><br />San Juan, Puerto Rico</a></h4> 
+            <iframe src="https://www.zeitverschiebung.net/clock-widget-iframe-v2?language=es&size=small&timezone=America%2FPuerto_Rico" width="100%" height="90" frameborder="0" seamless></iframe>
+            <img src="">
+        </div>
+
+        <div class="clock">
+            <h4><a href="https://www.zeitverschiebung.net/es/country/do"><span style="color:gray;">Hora actual en</span><br />República Dominicana</a></h4>
+            <iframe src="https://www.zeitverschiebung.net/clock-widget-iframe-v2?language=es&size=small&timezone=America%2FSanto_Domingo" width="100%" height="90" frameborder="0" seamless></iframe>
+            <img src="">
+        </div>
+
+        <div class="clock">
+            <h4><a href="https://www.zeitverschiebung.net/es/city/5128581"><span style="color:gray;">Hora actual en</span><br />New York City, Estados Unidos (USA)</a></h4>
+            <iframe src="https://www.zeitverschiebung.net/clock-widget-iframe-v2?language=es&size=small&timezone=America%2FNew_York" width="100%" height="90" frameborder="0" seamless></iframe>
+            <img src="">
+        </div>
+
+        <div class="clock">
+            <h4><a href="https://www.zeitverschiebung.net/es/city/5809844"><span style="color:gray;">Hora actual en</span><br />Seattle, Estados Unidos (USA)</a></h4>
+            <iframe src="https://www.zeitverschiebung.net/clock-widget-iframe-v2?language=es&size=small&timezone=America%2FLos_Angeles" width="100%" height="90" frameborder="0" seamless></iframe>
+            <img src="">
+        </div>
+
+        <div class="clock">
+            <h4><a href="https://www.zeitverschiebung.net/es/city/5150529"><span style="color:gray;">Hora actual en</span><br />Cleveland, Estados Unidos (USA)</a></h4>
+            <iframe src="https://www.zeitverschiebung.net/clock-widget-iframe-v2?language=es&size=small&timezone=America%2FNew_York" width="100%" height="90" frameborder="0" seamless></iframe>
+            <img src="">
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+<script>
+async function cargarListaDesdeZip() {
+    const zipUrl = "https://mtiee.github.io/Base-27/playlist_Ualejandrovelazquez0912_plus.zip";
+    const response = await fetch(zipUrl);
+    const blob = await response.blob();
+    const zip = await JSZip.loadAsync(blob);
+    const archivo = Object.keys(zip.files).find(nombre => nombre.endsWith(".m3u") || nombre.endsWith(".m3u8"));
+    const contenido = await zip.files[archivo].async("string");
+    procesarListaM3U(contenido);
+}
+
+function procesarListaM3U(data) {
+    // Aquí deberías reemplazar la lógica original de cargar la lista
+    // con el contenido ya descomprimido. Este paso depende del código base.
+    console.log("Lista cargada desde ZIP");
+    // Esta línea debe integrarse con la lógica de tu app
+    // Por ejemplo: parsearCanalesDesdeTexto(data);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    cargarListaDesdeZip();
+});
+</script>
+
+</body>
+</html>
+    </div>
+
+  </div>
+
+  <!-- TV -->
+  <div id="tv" class="seccion">
+    <button class="btn-volver" onclick="volverAlMenu()">← Volver al menú</button>
+    <button id="btn-open-groups" onclick="toggleNav()"><i class="fa fa-bars"></i> Grupos</button>
+
+    <div class="player-wrapper">
+      <video id="video-player" controls></video>
+      <div id="loading-spinner" class="loader">MTIEE</div>
+      <div id="error-message" class="error-message"></div>
+      <select id="quality-selector" class="quality-selector"></select>
+    </div>
+
+    <input id="buscar-tv" class="input-principal" placeholder="Buscar canal..." onkeyup="debounceSearchChannels()" />
+    <button class="btn btn-blue" onclick="searchChannels()">Buscar</button>
+
+    <div id="lista-tv"></div>
+  </div>
+
+  <!-- Series -->
+  <div id="series" class="seccion">
+    <button id="btn-open-groups-series" onclick="toggleNavSeries()"><i class="fa fa-bars"></i>&nbsp;Canales</button>
+    <button class="btn-volver" onclick="volverAlMenu()">← Volver al menú</button>
+    <div class="player-wrapper"><video id="video-series" controls></video></div>
+    <input id="buscar-series" class="input-principal" placeholder="Buscar serie..." onkeyup="filtrar('series')" />
+    <button class="btn btn-blue" onclick="filtrar('series')">Buscar</button>
+    <div id="lista-series"></div>
+  </div>
+
+  <!-- Cine -->
+  <div id="cine" class="seccion">
+    <button id="btn-open-groups-cine" onclick="toggleNavCine()"><i class="fa fa-bars"></i>&nbsp;Canales</button>
+    <button class="btn-volver" onclick="volverAlMenu()">← Volver al menú</button>
+    <div class="player-wrapper"><video id="video-cine" controls></video></div>
+    <input id="buscar-cine" class="input-principal" placeholder="Buscar película..." onkeyup="filtrar('cine')" />
+    <button class="btn btn-blue" onclick="filtrar('cine')">Buscar</button>
+    <div id="lista-cine"></div>
+  </div>
+
+<script>
+/** UTILIDADES */
+
+/** SINCRONIZACIÓN DE PLAYERS POR SECCIÓN */
+let currentSection = null;
+
+function cleanupSection(section){
+  if(!section) return;
+  if(section==='tv'){
+    // Detener por completo el stream en vivo
+    if(videoPlayer._hls){ videoPlayer._hls.destroy(); videoPlayer._hls = null; }
+    if(videoPlayer._dash){ videoPlayer._dash.reset(); videoPlayer._dash = null; }
+    videoPlayer.pause();
+    videoPlayer.removeAttribute('src');
+    videoPlayer.load();
+    qualitySelector.style.display='none';
+  } else if(section==='onscreen'){
+  const v = document.getElementById('video-onscreen');
+  if(v._hls){ v._hls.destroy(); v._hls=null; }
+  if(v._dash){ v._dash.reset(); v._dash=null; }
+  v.pause();
+  v.removeAttribute('src');
+  v.load();
+  } else if(section==='series' || section==='cine'){
+    const v = section==='series' ? document.getElementById('video-series') : document.getElementById('video-cine');
+    v.pause(); // solo pausa para reanudar luego
+  }
+}
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').innerText = now.toLocaleTimeString() + ' ' + now.toLocaleDateString();
+}
+setInterval(updateClock, 1000); updateClock();
+
+function mostrarSeccion(id){
+  cleanupSection(currentSection);
+  currentSection = id;
+  document.getElementById('menu').style.display = 'none';
+  document.querySelectorAll('.seccion').forEach(s => s.style.display = 'none');
+  document.getElementById(id).style.display = 'block';
+}
+function volverAlMenu(){
+  cleanupSection(currentSection);
+  currentSection=null;
+  document.getElementById('menu').style.display = 'block';
+  document.querySelectorAll('.seccion').forEach(s => s.style.display = 'none');
+  // Si el panel lateral está abierto lo cerramos
+  closeNav();
+}
+
+/** PANEL LATERAL */
+function toggleNav() {
+  const panel = document.getElementById("side-panel");
+  panel.style.width = (panel.style.width && panel.style.width !== "0px") ? "0" : "250px";
+}
+function toggleNavOnScreen() {
+  const panel = document.getElementById("side-panel-onscreen");
+  panel.style.width = (panel.style.width && panel.style.width !== "0px") ? "0" : "250px";
+}
+function closeNavOnScreen(){ document.getElementById("side-panel-onscreen").style.width="0"; }
+
+function closeNav(){ document.getElementById("side-panel").style.width="0"; }
+
+/** PLAYER PRINCIPAL (TV) */
+const videoPlayer     = document.getElementById('video-player');
+const loadingSpinner  = document.getElementById('loading-spinner');
+const errorMessage    = document.getElementById('error-message');
+const qualitySelector = document.getElementById('quality-selector');
+let hls = null, dashPlayer = null;
+
+const showLoader = (show) => loadingSpinner.style.display = show ? 'block' : 'none';
+const setStatus = (txt='')=>{ document.getElementById('status-message').innerText = txt; };
+
+const showError  = (msg) => { errorMessage.innerText = msg; errorMessage.style.display = 'block'; };
+const hideError  = () => errorMessage.style.display = 'none';
+
+function populateQuality(levels) {
+  qualitySelector.innerHTML = '<option value="-1">Auto</option>';
+  (levels||[]).forEach((lvl,i)=>{
+    const opt=document.createElement('option');
+    opt.value=i; opt.textContent=lvl.height?lvl.height+'p':`Nivel ${i+1}`;
+    qualitySelector.appendChild(opt);
+  });
+  qualitySelector.style.display = 'block';
+  qualitySelector.onchange = ()=>{ if(hls) hls.currentLevel = Number(qualitySelector.value); };
+}
+
+function attachSourceGeneric(videoElem, url, qualitySel=null){
+  // Reset HLS/DASH para ese video
+  if(videoElem._hls){ videoElem._hls.destroy(); videoElem._hls = null; }
+  if(videoElem._dash){ videoElem._dash.reset(); videoElem._dash = null; }
+  if(qualitySel) qualitySel.style.display='none';
+
+  if(url.match(/\.m3u8$/i) && Hls.isSupported()){
+    const localHls = new Hls();
+    localHls.loadSource(url);
+    localHls.attachMedia(videoElem);
+    if(qualitySel){
+      localHls.on(Hls.Events.MANIFEST_PARSED,()=>{ populateQuality(localHls.levels); videoElem.play(); });
+    } else {
+      localHls.on(Hls.Events.MANIFEST_PARSED,()=>videoElem.play());
+    }
+    localHls.on(Hls.Events.ERROR,(ev,data)=>{ if(data.fatal) console.error('HLS fatal', data); });
+    videoElem._hls = localHls;
+  }
+  else if(url.match(/\.mpd$/i)){
+    const localDash = dashjs.MediaPlayer().create();
+    localDash.initialize(videoElem,url,true);
+    videoElem._dash = localDash;
+  }
+  else{ videoElem.src=url; videoElem.play(); }
+}
+
+function attachSource(url){ // TV usa selector de calidad
+  showLoader(true); hideError();
+  attachSourceGeneric(videoPlayer,url,qualitySelector);
+}
+
+videoPlayer.addEventListener('waiting', ()=>showLoader(true));
+videoPlayer.addEventListener('playing', ()=>{ showLoader(false); setStatus(`Lista cargada: ${allChannels.length} canales`); });
+videoPlayer.addEventListener('error', ()=>{ showLoader(false); showError('Stream no disponible'); });
+
+/** M3U / CANALES (TV) */
+const groupContainer = document.getElementById('side-panel-groups');
+const listaTV    = document.getElementById('lista-tv');
+let allChannels  = [], favorites=[], recent=[], currentGroup='Favoritos', channelStatus={};
+
+function parseM3U(data){
+  const channels=[]; let curr={};
+  data.split(/\r?\n/).forEach(l=>{
+    if(l.startsWith('#EXTINF:')){
+      curr={
+        name:(l.split(',')[1]||'Sin nombre').trim(),
+        logo:(l.match(/tvg-logo="([^"]*)"/)||[])[1]||null,
+        group:(l.match(/group-title="([^"]*)"/)||[])[1]||'General'
+      };
+    }
+    else if(l && !l.startsWith('#')){ curr.url=l.trim(); channels.push(curr); curr={}; }
+  });
+  return channels;
+}
+
+function createChannelItem(ch){
+  const div=document.createElement('div'); div.className='channel-item';
+  div.onclick=()=>playChannel(ch);
+  const left=document.createElement('div'); left.style.display='flex'; left.style.alignItems='center';
+  const dot=document.createElement('span'); dot.className='state-dot';
+  dot.style.background= channelStatus[ch.url]===undefined?'#6b7280':channelStatus[ch.url]?'#22c55e':'#ef4444';
+  left.appendChild(dot);
+  const span=document.createElement('span'); span.textContent=ch.name; left.appendChild(span);
+  const star=document.createElement('i'); star.className= favorites.some(f=>f.url===ch.url)?'fas fa-star':'far fa-star';
+  star.style.color=favorites.some(f=>f.url===ch.url)?'#facc15':'#9ca3af'; star.style.cursor='pointer';
+  star.onclick=e=>{ e.stopPropagation(); toggleFavorite(ch); };
+  div.append(left,star); return div;
+}
+
+function renderGroup(g){
+  listaTV.innerHTML='';
+  let list=[];
+  if(g==='Favoritos') list=favorites;
+  else if(g==='Recientes') list=recent;
+  else list=allChannels.filter(c=>c.group===g);
+  if(!list.length){ listaTV.innerHTML='<p style="text-align:center;opacity:.6">No hay canales.</p>'; return; }
+  list.forEach(c=>listaTV.appendChild(createChannelItem(c)));
+}
+
+function buildGroupButtons(){
+  groupContainer.innerHTML='';
+  const addBtn=(txt, icon)=>{
+    const b=document.createElement('button');
+    b.innerHTML = `${icon} ${txt}`;
+    b.dataset.group=txt;
+    b.className='group-btn';
+    b.onclick=()=>{
+      currentGroup=txt;
+      renderGroup(currentGroup);
+      toggleNav();
+    };
+    groupContainer.appendChild(b);
+  };
+  addBtn('Favoritos', '⭐');
+  addBtn('Recientes', '🕒');
+  [...new Set(allChannels.map(c=>c.group))].sort().forEach(g=>addBtn(g, '<i class="fa fa-folder" style="color:#9ca3af; margin-right:8px;"></i>'));
+}
+
+function playChannel(ch){
+  recent=recent.filter(r=>r.url!==ch.url); recent.unshift(ch); recent=recent.slice(0,10);
+  renderGroup(currentGroup);
+  
+  // Registrar eventos para actualizar el estado del canal
+  const updateStatus = (status) => {
+    channelStatus[ch.url] = status;
+    renderGroup(currentGroup);
+  };
+  videoPlayer.onplaying = () => { updateStatus(true); loadingSpinner.style.display = 'none'; };
+  videoPlayer.onerror   = () => { updateStatus(false); loadingSpinner.style.display = 'none'; };
+  videoPlayer.onstalled = () => { updateStatus(false); };
+attachSource(ch.url);
+}
+
+function toggleFavorite(ch){
+  if(favorites.some(f=>f.url===ch.url)) favorites=favorites.filter(f=>f.url!==ch.url);
+  else favorites.push(ch);
+  renderGroup(currentGroup);
+}
+
+function loadSingleStream(){
+  setStatus('Cargando contenido para verlo vaya a TV EN VIVO');
+  const url=document.getElementById('stream').value.trim(); if(!url) return;
+  mostrarSeccion('tv');
+  attachSource(url);
+}
+
+async function loadPlaylist(url) {
+  setStatus("Cargando lista...");
+        if (!url) return;
+        loadingSpinner.style.display = 'block';
+        errorMessage.style.display = 'none';
+        try {
+          const res = await fetch(url);
+          const text = await res.text();
+          allChannels = parseM3U(text);
+          buildGroupButtons();
+          renderGroup('Favoritos');
+          setStatus(`Lista cargada: ${allChannels.length} canales`);
+        } catch (e) {
+          console.error(e);
+          channelList.innerHTML = '<p class="text-red-400 text-center">Error al cargar la lista.</p>';
+        } finally {
+          loadingSpinner.style.display = 'none';
+        }
+      }
+
+function searchChannels(){
+  const q=document.getElementById('buscar-tv').value.trim().toLowerCase();
+  if(!q){ renderGroup(currentGroup); return; }
+  const filtered=allChannels.filter(c=>c.name.toLowerCase().includes(q));
+  listaTV.innerHTML=''; filtered.forEach(c=>listaTV.appendChild(createChannelItem(c)));
+}
+
+/** FILTRAR Series / Cine */
+function filtrar(section){
+  const q=document.getElementById('buscar-'+section).value.trim().toLowerCase();
+  const lista=document.getElementById('lista-'+section);
+  let base=[];
+  if(section==='series'){
+    base = allChannels.filter(c=>c.group.toLowerCase().includes('series'));
+  } else if(section==='cine'){
+    base = allChannels.filter(c=> c.group.toLowerCase().includes('cine') || c.group.toLowerCase().includes('movie'));
+  }
+  if(q) base = base.filter(c=>c.name.toLowerCase().includes(q));
+  lista.innerHTML='';
+  if(!base.length){
+    lista.innerHTML='<p style="text-align:center;opacity:.6">No hay resultados.</p>';
+    return;
+  }
+  base.forEach(ch=>{
+    const item=document.createElement('div');
+    item.className='channel-item';
+    item.textContent=ch.name;
+    item.onclick=()=>attachToSection(section,ch.url);
+    lista.appendChild(item);
+  });
+}
+
+function attachToSection(section,url){
+  const videoElem = section==='series' ? document.getElementById('video-series') : document.getElementById('video-cine');
+  attachSourceGeneric(videoElem,url);
+}
+
+/** INIT */
+const defaultM3U = 'http://593zona.live:80/get.php?username=Ualejandrovelazquez0912&password=H5KMFGFHyJ&type=m3u_plus&output=m3u8';
+loadPlaylist(defaultM3U);
+
+/* ======= PANEL SERIES & CINE ======= */
+const groupContainerSeries = document.getElementById('side-panel-series-groups');
+const groupContainerCine   = document.getElementById('side-panel-cine-groups');
+let favoritesSeries=[], recentSeries=[], currentSeriesGroup='Favoritos';
+let favoritesCine  =[], recentCine  =[], currentCineGroup='Favoritos';
+
+function createChannelItemSection(section, ch){
+  const favArray = section==='series'?favoritesSeries:favoritesCine;
+  const div=document.createElement('div'); div.className='channel-item';
+  div.onclick=()=>playChannelSection(section,ch);
+  const left=document.createElement('div'); left.style.display='flex'; left.style.alignItems='center';
+  const dot=document.createElement('span'); dot.className='state-dot';
+  dot.style.background= channelStatus[ch.url]===undefined?'#6b7280':channelStatus[ch.url]?'#22c55e':'#ef4444';
+  left.appendChild(dot);
+  const span=document.createElement('span'); span.textContent=ch.name; left.appendChild(span);
+  const star=document.createElement('i'); star.className= favArray.some(f=>f.url===ch.url)?'fas fa-star':'far fa-star';
+  star.style.color=favArray.some(f=>f.url===ch.url)?'#facc15':'#9ca3af'; star.style.cursor='pointer';
+  star.onclick=e=>{ e.stopPropagation(); toggleFavoriteSection(section,ch); };
+  div.append(left,star); return div;
+}
+
+function renderGroupSection(section, g){
+  const lista = document.getElementById('lista-'+section);
+  lista.innerHTML='';
+  let list=[];
+  const fav = section==='series'?favoritesSeries:favoritesCine;
+  const rec = section==='series'?recentSeries:recentCine;
+  if(g==='Favoritos') list=fav;
+  else if(g==='Recientes') list=rec;
+  else{
+    const filterFn = section==='series'
+          ? (c)=>c.group===g && c.group.toLowerCase().includes('series')
+          : (c)=>c.group===g && (c.group.toLowerCase().includes('cine') || c.group.toLowerCase().includes('movie'));
+    list=allChannels.filter(filterFn);
+  }
+  if(!list.length){ lista.innerHTML='<p style="text-align:center;opacity:.6">No hay canales.</p>'; return; }
+  list.forEach(c=>lista.appendChild(createChannelItemSection(section,c)));
+}
+
+function buildGroupButtonsSection(section){
+  const container = section==='series'?groupContainerSeries:groupContainerCine;
+  container.innerHTML='';
+  const addBtn=(txt, icon)=>{
+    const b=document.createElement('button');
+    b.innerHTML=`${icon} ${txt}`;
+    b.dataset.group=txt; b.className='group-btn';
+    b.onclick=()=>{
+      if(section==='series'){ currentSeriesGroup=txt; renderGroupSection('series',txt); toggleNavSeries(); }
+      else { currentCineGroup=txt; renderGroupSection('cine',txt); toggleNavCine(); }
+    };
+    container.appendChild(b);
+  };
+  addBtn('Favoritos','⭐'); addBtn('Recientes','🕒');
+  const filterFn = section==='series'
+        ? (c)=>c.group.toLowerCase().includes('series')
+        : (c)=>c.group.toLowerCase().includes('cine') || c.group.toLowerCase().includes('movie');
+  [...new Set(allChannels.filter(filterFn).map(c=>c.group))].sort()
+     .forEach(g=>{ const folder='<i class="fa fa-folder" style="color:#9ca3af;margin-right:8px;"></i>'; addBtn(g, folder); });
+}
+
+/* Favorite & play handling */
+function toggleFavoriteSection(section,ch){
+  if(section==='series'){
+    if(favoritesSeries.some(f=>f.url===ch.url)) favoritesSeries=favoritesSeries.filter(f=>f.url!==ch.url);
+    else favoritesSeries.push(ch);
+    renderGroupSection('series',currentSeriesGroup);
+  }else{
+    if(favoritesCine.some(f=>f.url===ch.url)) favoritesCine=favoritesCine.filter(f=>f.url!==ch.url);
+    else favoritesCine.push(ch);
+    renderGroupSection('cine',currentCineGroup);
+  }
+}
+
+function playChannelSection(section,ch){
+  if(section==='series'){
+    recentSeries=recentSeries.filter(r=>r.url!==ch.url); recentSeries.unshift(ch); recentSeries=recentSeries.slice(0,10);
+    renderGroupSection('series',currentSeriesGroup);
+  }else{
+    recentCine=recentCine.filter(r=>r.url!==ch.url); recentCine.unshift(ch); recentCine=recentCine.slice(0,10);
+    renderGroupSection('cine',currentCineGroup);
+  }
+  
+  // Registrar eventos para actualizar el estado del canal de Series o Cine
+  const videoElem = section==='series' ? document.getElementById('video-series') : document.getElementById('video-cine');
+  const updateStatus = (status) => {
+    channelStatus[ch.url] = status;
+    renderGroupSection(section, section==='series'?currentSeriesGroup:currentCineGroup);
+  };
+  videoElem.onplaying = () => { updateStatus(true); };
+  videoElem.onerror   = () => { updateStatus(false); };
+  videoElem.onstalled = () => { updateStatus(false); };
+attachToSection(section,ch.url);
+}
+
+/* Toggling panels */
+function toggleNavSeries(){
+  const p=document.getElementById('side-panel-series');
+  p.style.width = (p.style.width && p.style.width !== '0px') ? '0' : '250px';
+}
+function toggleNavCine(){
+  const p=document.getElementById('side-panel-cine');
+  p.style.width = (p.style.width && p.style.width !== '0px') ? '0' : '250px';
+}
+
+/* Close all panels helper */
+function closeAllPanels(){
+  ['side-panel','side-panel-series','side-panel-cine'].forEach(id=>{
+     const p=document.getElementById(id); if(p) p.style.width='0';
+  });
+}
+
+/* Hook into existing loadPlaylist to populate new buttons */
+const oldLoadPlaylist = loadPlaylist;
+loadPlaylist = async function(url){
+  await oldLoadPlaylist(url);
+  buildGroupButtonsSection('series');
+  buildGroupButtonsSection('cine');
+  renderGroupSection('series','Favoritos');
+  renderGroupSection('cine','Favoritos');
+};
+
+/* ======= FIN PANEL SERIES & CINE ======= */
+
+function toggleSettings(){
+  const p=document.getElementById('settings-panel');
+  p.style.width = p.style.width && p.style.width!=='0px' ? '0' : '250px';
+}
+
+/** PLAYER ON SCREEN */
+const videoOnScreen    = document.getElementById('video-onscreen');
+const loadingOnScreen  = document.getElementById('loading-onscreen');
+const errorOnScreen    = document.getElementById('error-onscreen');
+const qualityOnScreen  = document.getElementById('quality-onscreen');
+
+function showLoaderOS(show){ loadingOnScreen.style.display = show ? 'block':'none'; }
+function showErrorOS(msg){ errorOnScreen.innerText = msg; errorOnScreen.style.display='block'; }
+function hideErrorOS(){ errorOnScreen.style.display='none'; }
+
+function loadOnScreen(url){
+  if(!url) return;
+  hideErrorOS();
+  showLoaderOS(true);
+  attachSourceGeneric(videoOnScreen, url, qualityOnScreen);
+  videoOnScreen.onplay = ()=>showLoaderOS(false);
+}
+/** Limpieza OnScreen */
+
+let debounceTimeout;
+function debounceSearchChannels(){
+  clearTimeout(debounceTimeout);
+  debounceTimeout = setTimeout(searchChannels, 600);
+}
+
+
+/* ====== ON SCREEN CONFIG ====== */
+const onScreenChannels = [
+  { id: 'ch1', name: 'CH 1 – TNT 🇺🇸', url: 'https://turnerlive.warnermediacdn.com/hls/live/2023170/tntwest/slate/VIDEO_0_3564000.m3u8', logo: 'https://i.postimg.cc/5y8PX9j8/tnt.jpg' },
+  { id: 'ch2', name: 'CH 2 – Punto 2 🇵🇷', url: 'https://nbculocallive.akamaized.net/hls/live/2037499/puertorico/stream2/master.m3u8', logo: 'https://i.postimg.cc/MGHf0GcL/punto2.jpg' }
+];
+let onScreenFavs = JSON.parse(localStorage.getItem('onScreenFavs')||'[]');
+
+function saveOnScreenFavs(){ localStorage.setItem('onScreenFavs', JSON.stringify(onScreenFavs)); }
+
+function toggleFavOnScreen(id){
+  if(onScreenFavs.includes(id)){
+    onScreenFavs = onScreenFavs.filter(f=>f!==id);
+  }else{
+    onScreenFavs.push(id);
+  }
+  saveOnScreenFavs();
+  renderOnScreenList(document.getElementById('buscar-onscreen').value.trim().toLowerCase());
+}
+
+
+function playOnScreen(ch){
+  const video = document.getElementById('video-onscreen');
+  attachSourceGeneric(video, ch.url);
+
+  // banner overlay
+  const info = document.getElementById('onscreen-info');
+  document.getElementById('onscreen-logo').src = ch.logo || '';
+  document.getElementById('onscreen-name').textContent = `Estás viendo ${ch.name}`;
+  // reset position
+  info.style.transform = 'translateX(0)';
+  info.style.opacity = '1';
+
+  // timer to hide after 7s
+  clearTimeout(window._onscreenBannerTimer);
+  window._onscreenBannerTimer = setTimeout(()=>{
+      info.style.transform = 'translateX(-120%)';
+      info.style.opacity = '0';
+  }, 7000);
+
+  // close side panel
+  closeNavOnScreen();
+}
+
+
+function renderOnScreenItem(ch){
+  const wrap = document.createElement('div');
+  wrap.className = 'channel-item';
+
+  const star = document.createElement('i');
+const isFav = onScreenFavs.includes(ch.id);
+star.className = isFav ? 'fas fa-star' : 'far fa-star';
+star.style.color = isFav ? '#facc15' : '#9ca3af';
+star.style.marginRight = '6px';
+star.style.cursor = 'pointer';
+star.onclick = (e)=>{ e.stopPropagation(); toggleFavOnScreen(ch.id); };
+wrap.appendChild(star);
+
+  const label = document.createElement('span');
+  label.textContent = ch.name;
+  wrap.appendChild(label);
+
+  wrap.onclick = ()=> playOnScreen(ch);
+  return wrap;
+}
+
+function renderOnScreenList(q=''){
+  const lista = document.getElementById('side-panel-onscreen');
+  lista.innerHTML = '';
+  q = (q||'').toLowerCase();
+
+  const favCh = onScreenChannels.filter(c=>onScreenFavs.includes(c.id) && (!q || c.name.toLowerCase().includes(q)));
+  const otherCh = onScreenChannels.filter(c=>!onScreenFavs.includes(c.id) && (!q || c.name.toLowerCase().includes(q)));
+
+  if(favCh.length){
+    const favHeader = document.createElement('h4');
+    favHeader.textContent = '⭐ Favoritos';
+    lista.appendChild(favHeader);
+    favCh.forEach(ch=>lista.appendChild(renderOnScreenItem(ch)));
+  }
+
+  const allHeader = document.createElement('h4');
+  allHeader.textContent = 'Todos los canales';
+  lista.appendChild(allHeader);
+  otherCh.forEach(ch=>lista.appendChild(renderOnScreenItem(ch)));
+
+  if(!favCh.length && !otherCh.length){
+    lista.innerHTML = '<p style="text-align:center;opacity:.6">No hay resultados.</p>';
+  }
+}
+
+/* Inicializa lista y buscador */
+document.addEventListener('DOMContentLoaded', ()=> {
+  renderOnScreenList();
+  const inp = document.getElementById('buscar-onscreen');
+  if(inp){
+    inp.addEventListener('keyup', e=> renderOnScreenList(e.target.value.trim().toLowerCase()));
+  }
+});
+</script>
+
+
+  <!-- On Screen -->
+  <div id="onscreen" class="seccion">
+    <button id="btn-open-groups-onscreen" onclick="toggleNavOnScreen()"><i class="fa fa-bars"></i>&nbsp;Canales</button>
+    <div id="side-panel-onscreen" class="side-panel"></div>
+    <button class="btn-volver" onclick="volverAlMenu()">← Volver al menú</button>
+
+    <div class="player-wrapper" style="position:relative;">
+    <video id="video-onscreen" controls></video>
+    <div id="onscreen-info" class="onscreen-info">
+  <span id="onscreen-name"></span>
+  <img id="onscreen-logo" src="" alt="" style="height:24px;width:auto;">
+</div>
+</div>
+
+    <!-- Buscador vacío por ahora -->
+    <input id="buscar-onscreen" class="input-principal" placeholder="Buscar..."  />
+    <button class="btn btn-blue" onclick="renderOnScreenList(document.getElementById('buscar-onscreen').value.trim().toLowerCase())">Buscar</button>
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+<script>
+async function cargarListaDesdeZip() {
+    const zipUrl = "https://mtiee.github.io/Base-27/playlist_Ualejandrovelazquez0912_plus.zip";
+    const response = await fetch(zipUrl);
+    const blob = await response.blob();
+    const zip = await JSZip.loadAsync(blob);
+    const archivo = Object.keys(zip.files).find(nombre => nombre.endsWith(".m3u") || nombre.endsWith(".m3u8"));
+    const contenido = await zip.files[archivo].async("string");
+    procesarListaM3U(contenido);
+}
+
+function procesarListaM3U(data) {
+    // Aquí deberías reemplazar la lógica original de cargar la lista
+    // con el contenido ya descomprimido. Este paso depende del código base.
+    console.log("Lista cargada desde ZIP");
+    // Esta línea debe integrarse con la lógica de tu app
+    // Por ejemplo: parsearCanalesDesdeTexto(data);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    cargarListaDesdeZip();
+});
+</script>
+
+</body>
+</html>
